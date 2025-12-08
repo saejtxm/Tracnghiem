@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Kiểm Tra Kiến Thức Tín Dụng Ngân Hàng</title>
+    <!-- Tải Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Thiết lập font cho toàn bộ ứng dụng */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Màu nền nhẹ */
+        }
+        /* Custom styling cho các nút đáp án */
+        .answer-btn {
+            transition: all 0.2s;
+        }
+        .answer-btn:not(.answered):hover {
+            background-color: #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        /* Hiệu ứng khi chọn đúng */
+        .correct-answer {
+            background-color: #d1fae5 !important; /* Xanh lá nhạt */
+            border-color: #10b981 !important;
+        }
+        /* Hiệu ứng khi chọn sai */
+        .incorrect-answer {
+            background-color: #fee2e2 !important; /* Đỏ nhạt */
+            border-color: #ef4444 !important;
+        }
+        /* Ẩn nút "Tiếp tục" mặc định */
+        #next-button {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div id="quiz-container" class="bg-white rounded-xl shadow-2xl p-6 sm:p-10 w-full max-w-2xl">
+        
+        <h1 class="text-3xl font-extrabold text-center mb-2 text-indigo-700">Kiểm Tra Kiến Thức</h1>
+        <p class="text-center text-gray-500 mb-6 border-b pb-4">Tín dụng Ngân hàng</p>
+
+        <!-- Hiển thị Câu hỏi và Tình trạng -->
+        <div id="status" class="mb-4 text-sm font-semibold text-gray-600"></div>
+        <div id="question-area" class="min-h-[150px]">
+            <h2 id="question-text" class="text-lg font-bold text-gray-800 mb-6"></h2>
+            <div id="answers-container" class="space-y-3">
+                <!-- Các nút đáp án sẽ được chèn vào đây bởi JavaScript -->
+            </div>
+        </div>
+
+        <!-- Khu vực Giải thích và Nút Tiếp tục -->
+        <div id="explanation-area" class="mt-6 p-4 rounded-lg border-l-4 border-yellow-500 bg-yellow-50 hidden">
+            <p class="font-semibold text-yellow-800">Giải thích:</p>
+            <p id="rationale-text" class="text-sm text-yellow-700 mt-1"></p>
+        </div>
+
+        <div class="flex justify-end mt-8">
+            <button id="next-button" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-150 ease-in-out">
+                Tiếp tục &rarr;
+            </button>
+        </div>
+
+        <!-- Khu vực Kết quả (Ẩn ban đầu) -->
+        <div id="result-screen" class="text-center p-8 hidden">
+            <h2 class="text-3xl font-extrabold text-indigo-700 mb-4">Hoàn thành!</h2>
+            <p class="text-xl text-gray-600 mb-2">Bạn đã hoàn thành bài kiểm tra.</p>
+            <p id="final-score" class="text-4xl font-bold text-green-600 my-4">--/10</p>
+            <button onclick="window.location.reload()" class="px-8 py-3 bg-green-500 text-white font-bold rounded-lg shadow-lg hover:bg-green-600 transition duration-150">
+                Làm lại
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // Dữ liệu câu hỏi
+        const quizData = [
+            {
+                question: "Khái niệm nào sau đây mô tả đúng nhất về Tín dụng ngân hàng?",
+                options: [
+                    { text: "Ngân hàng cho khách hàng mượn tiền miễn phí trong thời gian ngắn.", rationale: "Tín dụng ngân hàng luôn phải trả lãi và thường có thời hạn nhất định, không miễn phí.", isCorrect: false },
+                    { text: "Ngân hàng tặng khách hàng một lượng tiền dựa trên tài sản của họ.", rationale: "Tín dụng là một khoản vay phải hoàn trả, không phải là quà tặng hay trao đổi.", isCorrect: false },
+                    { text: "Ngân hàng chấp nhận cho khách hàng sử dụng tiền trên cơ sở lòng tin vào khả năng hoàn trả gốc và lãi đúng hạn.", rationale: "Đây là định nghĩa cốt lõi, nhấn mạnh vào cơ sở 'lòng tin' và yêu cầu 'hoàn trả cả gốc và lãi' đúng hạn.", isCorrect: true },
+                    { text: "Hình thức ngân hàng mua lại tài sản có giá trị của khách hàng.", rationale: "Đây là hoạt động mua bán, không phải hoạt động tín dụng (cho vay).", isCorrect: false }
+                ]
+            },
+            {
+                question: "Đặc điểm nào sau đây KHÔNG phải là đặc điểm cơ bản của Tín dụng ngân hàng?",
+                options: [
+                    { text: "Dựa trên cơ sở lòng tin giữa ngân hàng và khách hàng.", rationale: "Lòng tin là nền tảng quan trọng để ngân hàng quyết định cho vay.", isCorrect: false },
+                    { text: "Có tính thời hạn rõ ràng.", rationale: "Tất cả các khoản tín dụng đều có kỳ hạn vay cụ thể.", isCorrect: false },
+                    { text: "Phải hoàn trả cả gốc lẫn lãi.", rationale: "Hoàn trả đầy đủ là nguyên tắc bắt buộc của tín dụng.", isCorrect: false },
+                    { text: "Không cần hoàn trả lại khoản tiền gốc đã vay.", rationale: "Đây là đặc điểm sai. Người vay bắt buộc phải hoàn trả cả gốc và lãi khi đến hạn.", isCorrect: true }
+                ]
+            },
+            {
+                question: "Hình thức tín dụng nào dựa hoàn toàn vào uy tín của người vay mà KHÔNG cần tài sản bảo đảm?",
+                options: [
+                    { text: "Cho vay thế chấp.", rationale: "Cho vay thế chấp đòi hỏi tài sản đảm bảo.", isCorrect: false },
+                    { text: "Cho vay tín chấp.", rationale: "Đúng. Cho vay tín chấp dựa vào uy tín, thu nhập, lịch sử tín dụng, không yêu cầu tài sản thế chấp.", isCorrect: true },
+                    { text: "Cho vay trả góp.", rationale: "Cho vay trả góp là phương thức trả nợ, có thể là tín chấp hoặc thế chấp.", isCorrect: false },
+                    { text: "Cho vay qua thẻ tín dụng.", rationale: "Cho vay qua thẻ tín dụng là một hình thức, nhưng câu hỏi đang tập trung vào hình thức không cần tài sản bảo đảm.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Đặc điểm nổi bật của Cho vay thế chấp là gì?",
+                options: [
+                    { text: "Người vay phải có tài sản thế chấp có giá trị tương đương với vốn vay.", rationale: "Đây là đặc điểm định danh của vay thế chấp, tài sản đảm bảo là yếu tố cốt lõi.", isCorrect: true },
+                    { text: "Thủ tục vay đơn giản, thời hạn cho vay ngắn.", rationale: "Vay thế chấp thường có thủ tục phức tạp và thời hạn cho vay dài.", isCorrect: false },
+                    { text: "Chỉ dựa vào uy tín và thu nhập của người vay.", rationale: "Đây là đặc điểm của cho vay tín chấp, không phải thế chấp.", isCorrect: false },
+                    { text: "Lãi suất vay rất cao do rủi ro lớn.", rationale: "Lãi suất vay thế chấp thường thấp hơn vay tín chấp vì có tài sản đảm bảo.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Khi vay thế chấp, nếu người vay không thể trả nợ theo thỏa thuận, ngân hàng có quyền gì đối với tài sản thế chấp?",
+                options: [
+                    { text: "Buộc người vay phải tìm tài sản khác để thay thế.", rationale: "Ngân hàng sẽ xử lý tài sản đã thế chấp ban đầu, không bắt buộc thay thế bằng tài sản khác.", isCorrect: false },
+                    { text: "Chờ đợi vô thời hạn cho đến khi người vay có khả năng trả nợ.", rationale: "Ngân hàng có quy trình xử lý nợ quá hạn và tài sản đảm bảo theo luật định.", isCorrect: false },
+                    { text: "Xử lí tài sản thế chấp để thu hồi nợ (ví dụ: phát mại, bán đấu giá).", rationale: "Đúng. Đây là quyền của ngân hàng và trách nhiệm của người vay khi vi phạm hợp đồng vay thế chấp.", isCorrect: true },
+                    { text: "Chỉ có thể kiện ra tòa mà không được tự xử lý tài sản.", rationale: "Trong hợp đồng có thỏa thuận về quyền xử lý tài sản đảm bảo của ngân hàng khi đến hạn.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Trong hình thức Cho vay trả góp, người vay thỏa thuận trả khoản nào theo từng kỳ hạn (thường là hàng tháng)?",
+                options: [
+                    { text: "Chỉ trả tiền lãi suất, gốc sẽ trả một lần cuối cùng.", rationale: "Đây là hình thức vay gốc cuối kỳ, không phải trả góp.", isCorrect: false },
+                    { text: "Chỉ trả một phần tiền gốc, lãi suất sẽ trả sau.", rationale: "Trả góp yêu cầu trả cả lãi và gốc trong từng kỳ.", isCorrect: false },
+                    { text: "Chỉ trả phí dịch vụ và tiền lãi.", rationale: "Phải trả cả phần gốc của khoản vay.", isCorrect: false },
+                    { text: "Cả tiền gốc và tiền lãi được chia ra trả dần theo nhiều kỳ hạn.", rationale: "Đúng. Trả góp là việc chia nhỏ cả gốc và lãi để giảm áp lực trả nợ.", isCorrect: true }
+                ]
+            },
+            {
+                question: "Lợi ích nào sau đây của tín dụng ngân hàng giúp người vay thực hiện được các mục tiêu lớn ngay lập tức?",
+                options: [
+                    { text: "Tiếp cận được nguồn vốn nhanh chóng để phục vụ nhu cầu (ví dụ: mua nhà, ô tô).", rationale: "Khả năng tiếp cận vốn lớn và kịp thời là lợi ích cốt lõi giúp hiện thực hóa các kế hoạch mua sắm/đầu tư lớn.", isCorrect: true },
+                    { text: "Lãi suất luôn bằng lãi suất gửi tiết kiệm.", rationale: "Lãi suất cho vay luôn cao hơn lãi suất gửi tiết kiệm.", isCorrect: false },
+                    { text: "Được miễn phí hoàn toàn các thủ tục.", rationale: "Vẫn có các chi phí và thủ tục nhất định.", isCorrect: false },
+                    { text: "Không cần phải hoàn trả bất cứ khoản phí nào.", rationale: "Người vay phải hoàn trả gốc và lãi.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Theo nguyên tắc cho vay, người vay tín dụng ngân hàng BẮT BUỘC phải tuân thủ điều gì?",
+                options: [
+                    { text: "Được sử dụng vốn vay cho bất kỳ mục đích cá nhân nào.", rationale: "Người vay phải sử dụng vốn đúng mục đích đã cam kết trong hợp đồng.", isCorrect: false },
+                    { text: "Sử dụng vốn vay đúng mục đích đã cam kết.", rationale: "Đây là một trong các nguyên tắc cho vay cơ bản và bắt buộc để đảm bảo khoản vay an toàn và hiệu quả.", isCorrect: true },
+                    { text: "Không cần có phương án kinh doanh khả thi.", rationale: "Phương án khả thi là một nguyên tắc để đảm bảo khả năng hoàn trả nợ.", isCorrect: false },
+                    { text: "Chỉ cần trả lãi, không cần trả gốc.", rationale: "Nguyên tắc là hoàn trả cả gốc và lãi đúng hạn.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Rủi ro nào liên quan đến sự biến động của mức giá thị trường hoặc sự thay đổi trong ngành kinh doanh mà người vay tham gia?",
+                options: [
+                    { text: "Rủi ro lãi suất.", rationale: "Rủi ro lãi suất liên quan đến việc lãi suất thị trường thay đổi, không phải biến động giá ngành kinh doanh.", isCorrect: false },
+                    { text: "Rủi ro không trả được nợ.", rationale: "Rủi ro này là sự kiện không thể thanh toán, không phải biến động thị trường.", isCorrect: false },
+                    { text: "Rủi ro thị trường.", rationale: "Đúng. Rủi ro thị trường bao gồm sự thay đổi của giá cả hàng hóa, thị trường chứng khoán, hoặc ngành kinh doanh của người vay.", isCorrect: true },
+                    { text: "Rủi ro thủ tục.", rationale: "Đây không phải là một rủi ro cốt lõi trong hoạt động tín dụng.", isCorrect: false }
+                ]
+            },
+            {
+                question: "Nếu một người chọn hình thức Mua trả góp, chi phí cuối cùng họ phải trả (bao gồm gốc, lãi,...) so với việc trả tiền mặt một lần sẽ như thế nào?",
+                options: [
+                    { text: "Luôn luôn bằng nhau.", rationale: "Trả góp luôn tốn thêm chi phí lãi suất so với trả tiền mặt ngay lập tức.", isCorrect: false },
+                    { text: "Thấp hơn đáng kể vì được ngân hàng hỗ trợ.", rationale: "Lãi suất trả góp thường cao hơn lãi suất gửi tiết kiệm, dẫn đến tổng chi phí cao hơn.", isCorrect: false },
+                    { text: "Cao hơn vì phải chịu thêm chi phí lãi suất hằng tháng.", rationale: "Đúng. Lãi suất hằng tháng làm tăng tổng chi phí so với việc trả tiền mặt toàn bộ.", isCorrect: true },
+                    { text: "Không thể so sánh được vì phụ thuộc vào chính sách của từng ngân hàng.", rationale: "Mặc dù phụ thuộc chính sách, về cơ bản, vay luôn tốn chi phí lãi suất hơn là không vay.", isCorrect: false }
+                ]
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false; // Cờ kiểm tra câu hỏi đã được trả lời chưa
+
+        const statusEl = document.getElementById('status');
+        const questionTextEl = document.getElementById('question-text');
+        const answersContainerEl = document.getElementById('answers-container');
+        const nextButton = document.getElementById('next-button');
+        const explanationArea = document.getElementById('explanation-area');
+        const rationaleTextEl = document.getElementById('rationale-text');
+        const resultScreen = document.getElementById('result-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // Hàm hiển thị câu hỏi hiện tại
+        function displayQuestion() {
+            // Ẩn màn hình kết quả và hiển thị khu vực câu hỏi
+            quizContainer.style.display = 'block';
+            resultScreen.classList.add('hidden');
+            
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+
+            const currentQ = quizData[currentQuestionIndex];
+            
+            // Cập nhật trạng thái
+            statusEl.textContent = `Câu hỏi ${currentQuestionIndex + 1} / ${quizData.length} | Điểm: ${score}`;
+            questionTextEl.textContent = `${currentQuestionIndex + 1}. ${currentQ.question}`;
+            answersContainerEl.innerHTML = '';
+            
+            explanationArea.classList.add('hidden');
+            nextButton.style.display = 'none';
+            isAnswered = false;
+
+            // Hiển thị các đáp án
+            currentQ.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.setAttribute('data-index', index);
+                button.classList.add(
+                    'answer-btn',
+                    'w-full', 'text-left', 'p-4', 'border', 'border-gray-300', 'rounded-lg', 
+                    'shadow-sm', 'bg-white', 'text-gray-700', 'font-medium', 'focus:outline-none',
+                    'active:scale-95'
+                );
+                button.onclick = () => checkAnswer(button, option, currentQ.options);
+                answersContainerEl.appendChild(button);
+            });
+        }
+
+        // Hàm kiểm tra đáp án
+        function checkAnswer(selectedButton, selectedOption, options) {
+            if (isAnswered) return; // Ngăn chặn việc chọn lại
+
+            isAnswered = true;
+            nextButton.style.display = 'block';
+
+            // Vô hiệu hóa tất cả các nút đáp án
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('answered');
+                btn.classList.remove('hover:bg-e5e7eb');
+            });
+
+            // Xử lý logic đúng/sai
+            if (selectedOption.isCorrect) {
+                score++;
+                selectedButton.classList.add('correct-answer', 'border-green-500', 'ring-2', 'ring-green-500');
+                rationaleTextEl.textContent = 'Chính xác! ' + selectedOption.rationale;
+                explanationArea.classList.remove('hidden');
+                explanationArea.classList.remove('border-red-500', 'bg-red-50');
+                explanationArea.classList.add('border-green-500', 'bg-green-50');
+            } else {
+                selectedButton.classList.add('incorrect-answer', 'border-red-500', 'ring-2', 'ring-red-500');
+                
+                // Tìm đáp án đúng để làm nổi bật
+                const correctOption = options.find(opt => opt.isCorrect);
+                const correctButton = Array.from(answersContainerEl.children).find(btn => btn.textContent === correctOption.text);
+                if (correctButton) {
+                    correctButton.classList.add('correct-answer', 'border-green-500');
+                }
+
+                rationaleTextEl.textContent = 'Chưa đúng. ' + selectedOption.rationale + ' Đáp án đúng: ' + correctOption.text + '. Vui lòng xem giải thích chi tiết.';
+                explanationArea.classList.remove('hidden');
+                explanationArea.classList.remove('border-green-500', 'bg-green-50');
+                explanationArea.classList.add('border-red-500', 'bg-red-50');
+            }
+
+            // Cập nhật trạng thái điểm số
+            statusEl.textContent = `Câu hỏi ${currentQuestionIndex + 1} / ${quizData.length} | Điểm: ${score}`;
+        }
+
+        // Hàm chuyển sang câu hỏi tiếp theo
+        nextButton.onclick = () => {
+            currentQuestionIndex++;
+            displayQuestion();
+        };
+
+        // Hàm hiển thị kết quả cuối cùng
+        function showResults() {
+            quizContainer.style.display = 'none';
+            resultScreen.classList.remove('hidden');
+            finalScoreEl.textContent = `${score} / ${quizData.length}`;
+            
+            // Thay đổi màu sắc dựa trên điểm số
+            if (score >= 8) {
+                finalScoreEl.classList.add('text-green-600');
+            } else if (score >= 5) {
+                finalScoreEl.classList.add('text-yellow-600');
+            } else {
+                finalScoreEl.classList.add('text-red-600');
+            }
+        }
+
+        // Bắt đầu bài kiểm tra
+        window.onload = displayQuestion;
+    </script>
+</body>
+</html>
+
+  
